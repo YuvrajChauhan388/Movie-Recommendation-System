@@ -4,39 +4,44 @@ import streamlit as st
 import os
 import gdown
 
-# Define the CSS loading function
-def load_css(css_file_path: str):
-    if os.path.exists(css_file_path):
-        with open(css_file_path, "r") as f:
-            css = f.read()
-            st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-# Google Drive file IDs for your pickles
+# File IDs from Google Drive
 MOVIE_LIST_ID = "17-lf9cKAUjcazaIUBS3ByUZq-qGmoDid"
 SIMILARITY_ID = "1MIcCeKBaNJFujd4gOrCHs8_DssIlYLgE"
 
 MOVIE_LIST_FILE = "movie_list.pkl"
 SIMILARITY_FILE = "similarity.pkl"
 
-# Function to download files from Google Drive if not present
+
+# ----------------- Helper: Download from Google Drive -----------------
 def download_file_google_drive(file_id, destination):
     if not os.path.exists(destination):
         with st.spinner(f"Downloading {destination} ..."):
-            gdown.download(f"https://drive.google.com/uc?id={file_id}", destination, quiet=False, fuzzy=True)
+            url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            gdown.download(url, destination, quiet=False)
+        if os.path.exists(destination):
+            size = os.path.getsize(destination)
+            if size < 1000:  # suspiciously small
+                st.error(f"Download failed: {destination} too small. Check link/permissions.")
+                st.stop()
         st.success(f"Downloaded {destination}")
 
-# Download pickle files
+
+# ----------------- CSS Loader -----------------
+def load_css(css_file_path: str):
+    if os.path.exists(css_file_path):
+        with open(css_file_path, "r") as f:
+            css = f.read()
+            st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
+
+# ----------------- Download Required Files -----------------
 download_file_google_drive(MOVIE_LIST_ID, MOVIE_LIST_FILE)
 download_file_google_drive(SIMILARITY_ID, SIMILARITY_FILE)
 
 # Load CSS
 load_css("style.css")
 
-# Verify file sizes
-st.write(f"{MOVIE_LIST_FILE} size: {os.path.getsize(MOVIE_LIST_FILE)} bytes")
-st.write(f"{SIMILARITY_FILE} size: {os.path.getsize(SIMILARITY_FILE)} bytes")
-
-# Load pickle files safely with error handling
+# ----------------- Load Pickle Files -----------------
 try:
     with open(MOVIE_LIST_FILE, 'rb') as f:
         movies = pickle.load(f)
@@ -46,13 +51,16 @@ except Exception as e:
     st.error(f"Failed to load pickle files: {e}")
     st.stop()
 
-# Helper functions (fetch_poster, recommend)
+
+# ----------------- TMDB Poster Fetch -----------------
 def fetch_poster(movie_id):
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=3311b8aedeb68f05554d54a201c6ce0c&language=en-US"
     data = requests.get(url).json()
     poster_path = data.get('poster_path', '')
     return "https://image.tmdb.org/t/p/w500/" + poster_path if poster_path else ""
 
+
+# ----------------- Recommendation Function -----------------
 def recommend(movie):
     index = movies[movies['title'] == movie].index[0]
     distances = sorted(
@@ -68,10 +76,11 @@ def recommend(movie):
         recommended_movie_names.append(movies.iloc[i[0]].title)
     return recommended_movie_names, recommended_movie_posters
 
-# App Layout
+
+# ----------------- Streamlit App Layout -----------------
 st.markdown('<div class="main-header">🎬 Movie Recommender</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-header">Discover your next favorite film! Select a movie and get 5 beautiful recommendations.</div>',
+    '<div class="sub-header">Discover your next favorite film! Select a movie and get 5 recommendations.</div>',
     unsafe_allow_html=True
 )
 
@@ -90,10 +99,8 @@ if st.button('Show Recommendations'):
             safe_title = names[i].replace("<", "&lt;").replace(">", "&gt;")
             st.markdown(f"<div class='movie-title' title='{safe_title}'>{safe_title}</div>", unsafe_allow_html=True)
             st.image(posters[i], use_container_width=True)
-    st.markdown(
-        "<hr style='margin:2em 0 1em 0; border-top:1.5px solid #4970a399'>",
-        unsafe_allow_html=True
-    )
+
+    st.markdown("<hr style='margin:2em 0 1em 0; border-top:1.5px solid #4970a399'>", unsafe_allow_html=True)
     st.markdown(
         "<div style='color:#3ddad7; font-size:1.09rem; font-weight:600; text-align:center; margin-top:0.8em;'>"
         "Don't see your favorite? Try another movie for a fresh set of recommendations!"
@@ -102,6 +109,7 @@ if st.button('Show Recommendations'):
     )
 
 st.markdown(
-    "<div style='text-align: center; font-size: 0.98rem; color: #f0e3bb; padding-top:22px'>Made with love for movie fans everywhere 🍿</div>",
+    "<div style='text-align: center; font-size: 0.98rem; color: #f0e3bb; padding-top:22px'>"
+    "Made with ❤️ for movie fans everywhere 🍿</div>",
     unsafe_allow_html=True
 )
