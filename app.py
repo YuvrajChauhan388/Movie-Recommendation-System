@@ -2,23 +2,14 @@ import streamlit as st
 import requests
 import pickle
 import os
-import urllib.request
+import gdown
 
-# Function to download files from Google Drive via direct URL
+# Function to download file using gdown, handles Google Drive large file confirmation
 def download_file_from_google_drive(drive_url, destination):
-    # Extract file ID from URL
-    try:
-        file_id = drive_url.split('/d/')[1].split('/')[0]
-    except IndexError:
-        st.error("Invalid Google Drive URL provided: " + drive_url)
-        return
-    # URL for downloading the file
-    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-
     if not os.path.exists(destination):
-        with st.spinner(f"Downloading {destination} ..."):
-            urllib.request.urlretrieve(download_url, destination)
-            st.success(f"Downloaded {destination}")
+        st.spinner(f"Downloading {destination} ...")
+        gdown.download(drive_url, destination, quiet=False)
+        st.success(f"Downloaded {destination}")
 
 # Load external CSS file
 def load_css(css_file_path: str):
@@ -29,19 +20,19 @@ def load_css(css_file_path: str):
 # Your external CSS file path
 CSS_FILE = "style.css"
 
-# URLs of large pickle files shared on Google Drive
-MOVIE_LIST_URL = "https://drive.google.com/file/d/1bGfGQj4Af1sUqnpfoTdRzfG7vzuVfSji/view?usp=sharing"
-SIMILARITY_URL = "https://drive.google.com/file/d/13eR-sqqXGKsb8WwJ5sXJpFLX15h2D05i/view?usp=sharing"
+# Google Drive direct URLs (use uc?export=download pattern)
+MOVIE_LIST_URL = "https://drive.google.com/uc?export=download&id=1bGfGQj4Af1sUqnpfoTdRzfG7vzuVfSji"
+SIMILARITY_URL = "https://drive.google.com/uc?export=download&id=13eR-sqqXGKsb8WwJ5sXJpFLX15h2D05i"
 
-# Local file names to save the downloads
+# Local file names to save
 MOVIE_LIST_FILE = "movie_list.pkl"
 SIMILARITY_FILE = "similarity.pkl"
 
-# Download pickle files if not present locally
+# Download pickle files if missing
 download_file_from_google_drive(MOVIE_LIST_URL, MOVIE_LIST_FILE)
 download_file_from_google_drive(SIMILARITY_URL, SIMILARITY_FILE)
 
-# Load CSS styles
+# Load CSS
 load_css(CSS_FILE)
 
 # Helper functions
@@ -67,13 +58,15 @@ def recommend(movie):
     return recommended_movie_names, recommended_movie_posters
 
 # Load pickle data
-movies = pickle.load(open(MOVIE_LIST_FILE, 'rb'))
-similarity = pickle.load(open(SIMILARITY_FILE, 'rb'))
+with open(MOVIE_LIST_FILE, 'rb') as f:
+    movies = pickle.load(f)
+with open(SIMILARITY_FILE, 'rb') as f:
+    similarity = pickle.load(f)
 
 # Streamlit UI
 st.markdown('<div class="main-header">🎬 Movie Recommender</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-header">Discover your next favorite film! Select a movie and get 5 beautiful recommendations.</div>',
+    '<div class="sub-header">Discover your next favorite film! Select a movie and get 5 beautiful recommendations.<br>(Hover to see long titles.)</div>',
     unsafe_allow_html=True
 )
 
