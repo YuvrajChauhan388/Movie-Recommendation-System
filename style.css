@@ -1,0 +1,77 @@
+/* style.css */
+body {
+    background-color: #1f1f2e;
+    color: #f0f0f7;
+}
+.stApp {
+    background: linear-gradient(120deg, #232526 0%, #5e738d 100%);
+}
+.main-header {
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    color: #ffb92a;
+    font-size: 2.7rem;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.sub-header {
+    color: #d6eaff;
+    font-size: 1.15rem;
+    margin-bottom: 26px;
+    text-align: center;
+}
+.movie-title {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0 auto;
+    font-weight: 700;
+    color: #fff7d6;
+    font-size: 1rem;
+    padding: 8px 0 4px 0;
+    text-align: center;
+    transition: color 0.2s;
+    cursor: default;
+    border-radius: 5px;
+    background: rgba(24,36,48,0.6);
+}
+.movie-title:hover {
+    white-space: normal;
+    overflow: visible;
+    background: rgba(34,46,70,0.9);
+    color: #ffe37a;
+    z-index: 9999;
+}
+.stSelectbox label {
+    color: #e7e9ee;
+    font-size: 1.08rem;
+    font-weight: 600;
+}
+.stButton>button {
+    background: linear-gradient(90deg, #3ddad7 26%, #ffb92a 93%);
+    color: #222 !important;
+    border-radius: 7px;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 0.7em 1.9em;
+    margin-top: 14px;
+    margin-bottom: 16px;
+    transition: 0.3s all;
+}
+.stButton>button:hover {
+    filter: brightness(0.9);
+    box-shadow: 0px 6px 16px 0px #061a40AA;
+}
+img {
+    display: block;
+    box-shadow: 0 10px 20px 0 #12263a44;
+    border-radius: 7px !important;
+    margin-right: auto;
+    margin-left: auto;
+    transition: 0.18s;
+    background: #e8eaed;
+    max-height: 265px;
+    object-fit: cover;
+    margin-bottom: 0.5em;
+}
