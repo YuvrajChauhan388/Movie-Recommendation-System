@@ -4,43 +4,25 @@ import pickle
 import os
 import gdown
 
-# IDs extracted from your provided Google Drive links
+# File IDs extracted from your Google Drive links
 MOVIE_LIST_ID = "1bGfGQj4Af1sUqnpfoTdRzfG7vzuVfSji"
 SIMILARITY_ID = "13eR-sqqXGKsb8WwJ5sXJpFLX15h2D05i"
 
 MOVIE_LIST_FILE = "movie_list.pkl"
 SIMILARITY_FILE = "similarity.pkl"
 
-# Download file if not present
-def download_from_google_drive(file_id, dest):
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    if not os.path.exists(dest):
-        with st.spinner(f"Downloading {dest} ..."):
-            gdown.download(url, dest, quiet=False)
-        st.success(f"Downloaded {dest}")
+def download_file_google_drive(file_id, destination):
+    if not os.path.exists(destination):
+        with st.spinner(f"Downloading {destination} ..."):
+            gdown.download(f'https://drive.google.com/uc?id={file_id}', destination, quiet=False, fuzzy=True)
+        st.success(f"Downloaded {destination}")
 
-# Download necessary files
-download_from_google_drive(MOVIE_LIST_ID, MOVIE_LIST_FILE)
-download_from_google_drive(SIMILARITY_ID, SIMILARITY_FILE)
+download_file_google_drive(MOVIE_LIST_ID, MOVIE_LIST_FILE)
+download_file_google_drive(SIMILARITY_ID, SIMILARITY_FILE)
 
-# Verify downloaded file sizes to catch errors
-size_movie_list = os.path.getsize(MOVIE_LIST_FILE)
-size_similarity = os.path.getsize(SIMILARITY_FILE)
+st.write(f"{MOVIE_LIST_FILE} size: {os.path.getsize(MOVIE_LIST_FILE)} bytes")
+st.write(f"{SIMILARITY_FILE} size: {os.path.getsize(SIMILARITY_FILE)} bytes")
 
-st.write(f"{MOVIE_LIST_FILE} size: {size_movie_list} bytes")
-st.write(f"{SIMILARITY_FILE} size: {size_similarity} bytes")
-
-# Load CSS file
-def load_css(css_file_path: str):
-    if os.path.exists(css_file_path):
-        with open(css_file_path, "r") as f:
-            css = f.read()
-        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-CSS_FILE = "style.css"
-load_css(CSS_FILE)
-
-# Load pickle data safely
 try:
     with open(MOVIE_LIST_FILE, 'rb') as f:
         movies = pickle.load(f)
@@ -50,34 +32,37 @@ except Exception as e:
     st.error(f"Failed to load pickle files: {e}")
     st.stop()
 
-# Helper function to get poster URL from TMDB API
+def load_css(css_path):
+    if os.path.exists(css_path):
+        with open(css_path, "r") as f:
+            css = f.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
+CSS_FILE = "style.css"
+load_css(CSS_FILE)
+
 def fetch_poster(movie_id):
     url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key=3311b8aedeb68f05554d54a201c6ce0c&language=en-US"
-    response = requests.get(url)
-    data = response.json()
-    poster_path = data.get('poster_path')
-    if poster_path:
-        return "https://image.tmdb.org/t/p/w500/" + poster_path
-    return ""
+    data = requests.get(url).json()
+    poster_path = data.get('poster_path', '')
+    return "https://image.tmdb.org/t/p/w500/" + poster_path if poster_path else ""
 
-# Recommend function to get names and posters of recommended movies
 def recommend(movie):
     index = movies[movies['title'] == movie].index[0]
     distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])
-    recommended_movie_names = []
-    recommended_movie_posters = []
+    rec_names = []
+    rec_posters = []
     for i in distances[1:6]:
         movie_id = movies.iloc[i[0]].movie_id
-        recommended_movie_names.append(movies.iloc[i[0]].title)
-        recommended_movie_posters.append(fetch_poster(movie_id))
-    return recommended_movie_names, recommended_movie_posters
+        rec_names.append(movies.iloc[i[0]].title)
+        rec_posters.append(fetch_poster(movie_id))
+    return rec_names, rec_posters
 
-# Streamlit UI components
 st.markdown('<div class="main-header">🎬 Movie Recommender</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">Discover your next favorite film! Select a movie and get 5 beautiful recommendations.<br>(Hover to see long titles.)</div>', unsafe_allow_html=True)
 
 movie_list = movies['title'].values
-selected_movie = st.selectbox("Type or choose a movie you like", movie_list, key="movie_dropdown")
+selected_movie = st.selectbox("Type or choose a movie you like", movie_list)
 
 if st.button('Show Recommendations'):
     names, posters = recommend(selected_movie)
